@@ -1,4 +1,6 @@
 ﻿using EducationCenter.Data.Models;
+using EducationCenter.Dto.DTOs;
+using EducationCenter.Service.Services.IService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +12,12 @@ namespace EducationCenter.Web.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly EducationCenterContext _context;
+        private readonly IStudentService _studentService;
 
-        public StudentsController(EducationCenterContext context)
+        public StudentsController(EducationCenterContext context, IStudentService studentService)
         {
             _context = context;
+            _studentService = studentService;
         }
 
         // ✅ GET: api/students
@@ -33,11 +37,14 @@ namespace EducationCenter.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Student>> PostStudent(Student student)
+        public async Task<ActionResult<StudentDTO>> PostStudent(StudentDTO studentDto)
         {
-            _context.Students.Add(student);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetStudent), new { id = student.StudentID }, student);
+            //_context.Students.Add(student);
+            //await _context.SaveChangesAsync();
+            //return CreatedAtAction(nameof(GetStudent), new { id = student.StudentID }, student);
+
+            var student = await _studentService.AddStudentAsync(studentDto);
+            return Ok(studentDto);
         }
 
         [HttpPut("{id}")]

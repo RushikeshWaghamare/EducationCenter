@@ -4,6 +4,7 @@ using EducationCenter.Service.Services.IService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EducationCenter.Web.Controllers
 {
@@ -22,11 +23,44 @@ namespace EducationCenter.Web.Controllers
 
         // ✅ GET: api/students
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Student>>> GetAllStudents()
+        public async Task<ActionResult<IEnumerable<Student>>> GetAllStudents(
+            int pageNumber = 1,
+            int pageSize = 5,
+            string search = "")
         {
-            var students = await _context.Students.ToListAsync();
-            return Ok(students);
+            if (pageNumber <= 0 || pageSize <= 0)
+                return BadRequest("Invalid pagination parameters.");
+
+            IQueryable<Student> query = _context.Students;
+
+            if (!string.IsNullOrWhiteSpace(search) && search.Trim().Length >= 2)
+            {
+                string lowerSearch = search.Trim().ToLower();
+                query = query.Where(s =>
+                    s.FirstName.ToLower().Contains(lowerSearch) ||
+                    s.LastName.ToLower().Contains(lowerSearch) ||
+                    s.Address.ToLower().Contains(lowerSearch));
+            }
+
+            var totalStudents = await query.CountAsync();
+
+            var students = await query
+                .OrderBy(s => s.StudentID)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var response = new
+            {
+                currentPage = pageNumber,
+                totalPages = (int)Math.Ceiling(totalStudents / (double)pageSize),
+                totalStudents,
+                students
+            };
+
+            return Ok(response);
         }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Student>> GetStudent(int id)
@@ -37,15 +71,15 @@ namespace EducationCenter.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<StudentDTO>> PostStudent(StudentDTO studentDto)
+        public async Task<ActionResult<StudentDTO>> PostStudent([FromBody] StudentDTO studentDTO)
         {
-            //_context.Students.Add(student);
-            //await _context.SaveChangesAsync();
-            //return CreatedAtAction(nameof(GetStudent), new { id = student.StudentID }, student);
+            if (studentDTO == null)
+                return BadRequest("Student data is null.");
 
-            var student = await _studentService.AddStudentAsync(studentDto);
-            return Ok(studentDto);
+            var student = await _studentService.AddStudentAsync(studentDTO);
+            return Ok();
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutStudent(int id, Student student)

@@ -8,21 +8,16 @@ namespace EducationCenter.Dto.DTOs
 {
     public class StudentDTO
     {
-        public int studentId { get; set; }
-        public string firstName { get; set; }
-
-        public string lastName { get; set; }
-
-        public string gender { get; set; }
-
-        public DateOnly? dateOfBirth { get; set; }
-
-        public string email { get; set; }
-
-        public string phone { get; set; }
-
-        public string address { get; set; }
-        public DateOnly? enrollmentDate { get; set; }
-        public string status { get; set; }
+        public int StudentID { get; set; }
+        public string FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Gender { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
+        public DateOnly? EnrollmentDate { get; set; }
+        public string? Status { get; set; }
     }
+
 }

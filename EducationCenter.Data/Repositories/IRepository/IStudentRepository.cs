@@ -1,4 +1,5 @@
 ﻿using EducationCenter.Data.Models;
+using EducationCenter.Data.Pagination;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace EducationCenter.Data.Repositories.IRepository
 {
     public interface IStudentRepository
     {
-        Task<IEnumerable<Student>> GetAllStudentsAsync();
+        Task<PagedResult<Student>> GetAllStudentsAsync(int pageNumber, int pageSize, string search);
         Task<Student?> GetStudentByIdAsync(int id);
         Task<Student> AddStudentAsync(Student student);
         Task<bool> UpdateStudentAsync(int id, Student student);

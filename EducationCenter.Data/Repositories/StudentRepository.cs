@@ -1,4 +1,5 @@
 ﻿using EducationCenter.Data.Models;
+using EducationCenter.Data.Pagination;
 using EducationCenter.Data.Repositories.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -31,10 +32,32 @@ namespace EducationCenter.Data.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<Student>> GetAllStudentsAsync()
+        public async Task<PagedResult<Student>> GetAllStudentsAsync(int pageNumber, int pageSize, string search)
         {
-            throw new NotImplementedException();
+            IQueryable<Student> query = _context.Students;
+
+            if (!string.IsNullOrWhiteSpace(search) && search.Trim().Length >= 2)
+            {
+                string lowerSearch = search.Trim().ToLower();
+                query = query.Where(s =>
+                    s.FirstName.ToLower().Contains(lowerSearch) ||
+                    s.LastName.ToLower().Contains(lowerSearch) ||
+                    s.Address.ToLower().Contains(lowerSearch));
+            }
+
+            int totalStudents = await query.CountAsync();
+
+            var students = await query
+                .OrderBy(s => s.StudentID)
+                .GetPagedAsync(pageNumber, pageSize);
+
+            return new PagedResult<Student>
+            {
+                Items = students,
+                TotalCount = totalStudents
+            };
         }
+
 
         public Task<Student?> GetStudentByIdAsync(int id)
         {

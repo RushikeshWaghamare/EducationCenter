@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using EducationCenter.Data.Models;
+using EducationCenter.Data.Pagination;
 using EducationCenter.Data.Repositories.IRepository;
 using EducationCenter.Dto.DTOs;
 using EducationCenter.Service.Services.IService;
@@ -32,9 +33,15 @@ namespace EducationCenter.Service.Services
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<StudentDTO>> GetAllStudentsAsync()
+        public async Task<PagedResult<StudentDTO>> GetAllStudentsAsync(int pageNumber, int pageSize, string search)
         {
-            throw new NotImplementedException();
+            var pagedResult = await _studentRepository.GetAllStudentsAsync(pageNumber, pageSize, search);
+
+            return new PagedResult<StudentDTO>
+            {
+                Items = _mapper.Map<List<StudentDTO>>(pagedResult.Items),
+                TotalCount = pagedResult.TotalCount
+            };
         }
 
         public Task<StudentDTO?> GetStudentByIdAsync(int id)

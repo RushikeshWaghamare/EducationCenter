@@ -20,42 +20,21 @@ namespace EducationCenter.Web.Controllers
             _context = context;
             _studentService = studentService;
         }
-
-        // ✅ GET: api/students
+        
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Student>>> GetAllStudents(
-            int pageNumber = 1,
-            int pageSize = 5,
-            string search = "")
+        public async Task<ActionResult> GetAllStudents(int pageNumber = 1, int pageSize = 5, string search = "")
         {
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Invalid pagination parameters.");
 
-            IQueryable<Student> query = _context.Students;
-
-            if (!string.IsNullOrWhiteSpace(search) && search.Trim().Length >= 2)
-            {
-                string lowerSearch = search.Trim().ToLower();
-                query = query.Where(s =>
-                    s.FirstName.ToLower().Contains(lowerSearch) ||
-                    s.LastName.ToLower().Contains(lowerSearch) ||
-                    s.Address.ToLower().Contains(lowerSearch));
-            }
-
-            var totalStudents = await query.CountAsync();
-
-            var students = await query
-                .OrderBy(s => s.StudentID)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            var pagedResult = await _studentService.GetAllStudentsAsync(pageNumber, pageSize, search);
 
             var response = new
             {
                 currentPage = pageNumber,
-                totalPages = (int)Math.Ceiling(totalStudents / (double)pageSize),
-                totalStudents,
-                students
+                totalPages = (int)Math.Ceiling(pagedResult.TotalCount / (double)pageSize),
+                totalStudents = pagedResult.TotalCount,
+                students = pagedResult.Items
             };
 
             return Ok(response);

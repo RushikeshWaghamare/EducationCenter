@@ -1,4 +1,5 @@
-﻿using EducationCenter.Dto.DTOs;
+﻿using EducationCenter.Data.Pagination;
+using EducationCenter.Dto.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace EducationCenter.Service.Services.IService
 {
     public interface IStudentService
     {
-        Task<IEnumerable<StudentDTO>> GetAllStudentsAsync();
+        Task<PagedResult<StudentDTO>> GetAllStudentsAsync(int pageNumber, int pageSize, string search);
         Task<StudentDTO?> GetStudentByIdAsync(int id);
         Task<StudentDTO> AddStudentAsync(StudentDTO student);
         Task<bool> UpdateStudentAsync(int id, StudentDTO student);

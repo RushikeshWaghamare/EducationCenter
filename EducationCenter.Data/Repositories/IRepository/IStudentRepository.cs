@@ -13,7 +13,7 @@ namespace EducationCenter.Data.Repositories.IRepository
         Task<PagedResult<Student>> GetAllStudentsAsync(int pageNumber, int pageSize, string search);
         Task<Student?> GetStudentByIdAsync(int id);
         Task<Student> AddStudentAsync(Student student);
-        Task<bool> UpdateStudentAsync(int id, Student student);
+        Task<Student> UpdateStudentAsync(int id, Student student);
         Task<bool> DeleteStudentAsync(int id);
     }
 }

@@ -1,4 +1,6 @@
 ﻿using EducationCenter.Data.Models;
+using EducationCenter.Dto.DTOs;
+using EducationCenter.Service.Services.IService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,55 +11,87 @@ namespace EducationCenter.Web.Controllers
     [ApiController]
     public class DepartmentsController : ControllerBase
     {
-        private readonly EducationCenterContext _context;
+        private readonly IDepartmentService _departmentService;
 
-        public DepartmentsController(EducationCenterContext context)
+        public DepartmentsController(IDepartmentService departmentService)
         {
-            _context = context;
+            _departmentService = departmentService;
         }
 
-        // ✅ GET: api/departments
+        // GET: api/departments?pageNumber=1&pageSize=5&search=abc
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Department>>> GetAllDepartments()
+        public async Task<IActionResult> GetAllDepartments(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] string search = "")
         {
-            var departments = await _context.Departments.ToListAsync();
-            return Ok(departments);
+            if (pageNumber <= 0 || pageSize <= 0)
+                return BadRequest("Invalid pagination parameters.");
+
+            var pagedResult = await _departmentService.GetAllSIDepartmentsAsync(pageNumber, pageSize, search);
+
+            if (pagedResult == null || !pagedResult.Items.Any())
+                return NotFound("No departments found.");
+
+            var response = new
+            {
+                currentPage = pageNumber,
+                totalPages = (int)Math.Ceiling(pagedResult.TotalCount / (double)pageSize),
+                totalDepartments = pagedResult.TotalCount,
+                departments = pagedResult.Items
+            };
+
+            return Ok(response);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Department>> GetDepartment(int id)
+        // GET: api/departments/{id}
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetDepartment(int id)
         {
-            var dept = await _context.Departments.FindAsync(id);
-            if (dept == null) return NotFound();
-            return dept;
+            var department = await _departmentService.GetDepartmentByIdAsync(id);
+
+            if (department == null)
+                return NotFound($"Department with ID {id} not found.");
+
+            return Ok(department);
         }
 
+        // POST: api/departments
         [HttpPost]
-        public async Task<ActionResult<Department>> PostDepartment(Department department)
+        public async Task<IActionResult> CreateDepartment([FromBody] DepartmentDTO departmentDTO)
         {
-            _context.Departments.Add(department);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetDepartment), new { id = department.DepartmentID }, department);
+            if (departmentDTO == null)
+                return BadRequest("Department data cannot be null.");
+
+            var createdDepartment = await _departmentService.AddDepartmentAsync(departmentDTO);
+
+            return CreatedAtAction(nameof(GetDepartment), new { id = createdDepartment.DepartmentID }, createdDepartment);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutDepartment(int id, Department department)
+        // PUT: api/departments/{id}
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateDepartment(int id, [FromBody] DepartmentDTO departmentDTO)
         {
-            if (id != department.DepartmentID) return BadRequest();
+            if (departmentDTO == null)
+                return BadRequest("Invalid department data.");
 
-            _context.Entry(department).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var updatedDepartment = await _departmentService.UpdateDepartmentAsync(id, departmentDTO);
+
+            if (updatedDepartment == null)
+                return NotFound($"Department with ID {id} not found.");
+
+            return Ok(updatedDepartment);
         }
 
-        [HttpDelete("{id}")]
+        // DELETE: api/departments/{id}
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
-            var dept = await _context.Departments.FindAsync(id);
-            if (dept == null) return NotFound();
+            var isDeleted = await _departmentService.DeleteDepartmentAsync(id);
 
-            _context.Departments.Remove(dept);
-            await _context.SaveChangesAsync();
+            if (!isDeleted)
+                return NotFound($"Department with ID {id} not found.");
+
             return NoContent();
         }
     }

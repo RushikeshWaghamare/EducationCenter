@@ -1,10 +1,7 @@
 ﻿using EducationCenter.Data.Models;
 using EducationCenter.Dto.DTOs;
 using EducationCenter.Service.Services.IService;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EducationCenter.Web.Controllers
 {
@@ -12,22 +9,24 @@ namespace EducationCenter.Web.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        private readonly EducationCenterContext _context;
         private readonly IStudentService _studentService;
 
-        public StudentsController(EducationCenterContext context, IStudentService studentService)
+        public StudentsController(IStudentService studentService)
         {
-            _context = context;
             _studentService = studentService;
         }
-        
+
+        // GET: api/students?pageNumber=1&pageSize=5&search=abc
         [HttpGet]
-        public async Task<ActionResult> GetAllStudents(int pageNumber = 1, int pageSize = 5, string search = "")
+        public async Task<IActionResult> GetAllStudents([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string search = "")
         {
             if (pageNumber <= 0 || pageSize <= 0)
                 return BadRequest("Invalid pagination parameters.");
 
             var pagedResult = await _studentService.GetAllStudentsAsync(pageNumber, pageSize, search);
+
+            if (pagedResult == null || !pagedResult.Items.Any())
+                return NotFound("No students found.");
 
             var response = new
             {
@@ -40,44 +39,52 @@ namespace EducationCenter.Web.Controllers
             return Ok(response);
         }
 
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Student>> GetStudent(int id)
+        // GET: api/students/{id}
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetStudent(int id)
         {
-            var student = await _context.Students.FindAsync(id);
-            if (student == null) return NotFound();
-            return student;
+            var student = await _studentService.GetStudentByIdAsync(id);
+
+            if (student == null)
+                return NotFound($"Student with ID {id} not found.");
+
+            return Ok(student);
         }
 
+        // POST: api/students
         [HttpPost]
-        public async Task<ActionResult<StudentDTO>> PostStudent([FromBody] StudentDTO studentDTO)
+        public async Task<IActionResult> CreateStudent([FromBody] StudentDTO studentDTO)
         {
             if (studentDTO == null)
-                return BadRequest("Student data is null.");
+                return BadRequest("Student data cannot be null.");
 
-            var student = await _studentService.AddStudentAsync(studentDTO);
-            return Ok();
+            var createdStudent = await _studentService.AddStudentAsync(studentDTO);
+
+            return CreatedAtAction(nameof(GetStudent), new { id = createdStudent.StudentID }, createdStudent);
         }
 
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutStudent(int id, Student student)
+        // PUT: api/students/{id}
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateStudent(int id, [FromBody] StudentDTO studentDTO)
         {
-            if (id != student.StudentID) return BadRequest();
+            if (studentDTO == null)
+                return BadRequest("Invalid student data.");
 
-            _context.Entry(student).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var updatedStudent = await _studentService.UpdateStudentAsync(id, studentDTO);
+            if (updatedStudent == null)
+                return NotFound($"Student with ID {id} not found.");
+
+            return Ok(updatedStudent);
         }
 
-        [HttpDelete("{id}")]
+        // DELETE: api/students/{id}
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteStudent(int id)
         {
-            var student = await _context.Students.FindAsync(id);
-            if (student == null) return NotFound();
+            var isDeleted = await _studentService.DeleteStudentAsync(id);
+            if (!isDeleted)
+                return NotFound($"Student with ID {id} not found.");
 
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
             return NoContent();
         }
     }

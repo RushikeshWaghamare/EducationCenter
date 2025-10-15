@@ -13,7 +13,7 @@ namespace EducationCenter.Service.Services.IService
         Task<PagedResult<StudentDTO>> GetAllStudentsAsync(int pageNumber, int pageSize, string search);
         Task<StudentDTO?> GetStudentByIdAsync(int id);
         Task<StudentDTO> AddStudentAsync(StudentDTO student);
-        Task<bool> UpdateStudentAsync(int id, StudentDTO student);
+        Task<StudentDTO> UpdateStudentAsync(int id, StudentDTO student);
         Task<bool> DeleteStudentAsync(int id);
     }
 }

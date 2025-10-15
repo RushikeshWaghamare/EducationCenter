@@ -1,7 +1,8 @@
-﻿using EducationCenter.Data.Models;
-using Microsoft.AspNetCore.Http;
+﻿using EducationCenter.Dto.DTOs;
+using EducationCenter.Service.Services.IService;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
 
 namespace EducationCenter.Web.Controllers
 {
@@ -9,55 +10,81 @@ namespace EducationCenter.Web.Controllers
     [ApiController]
     public class TeachersController : ControllerBase
     {
-        private readonly EducationCenterContext _context;
+        private readonly ITeacherService _teacherService;
 
-        public TeachersController(EducationCenterContext context)
+        public TeachersController(ITeacherService teacherService)
         {
-            _context = context;
+            _teacherService = teacherService;
         }
 
-        // ✅ GET: api/teachers
+        // GET: api/teachers?pageNumber=1&pageSize=5&search=abc
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Teacher>>> GetAllTeachers()
+        public async Task<IActionResult> GetAllTeachers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string search = "")
         {
-            var teachers = await _context.Teachers.ToListAsync();
-            return Ok(teachers);
+            if (pageNumber <= 0 || pageSize <= 0)
+                return BadRequest("Invalid pagination parameters.");
+
+            var pagedResult = await _teacherService.GetAllTeachersAsync(pageNumber, pageSize, search);
+
+            if (pagedResult == null || pagedResult.Items.Count == 0)
+                return NotFound("No teachers found.");
+
+            var response = new
+            {
+                currentPage = pageNumber,
+                totalPages = (int)Math.Ceiling(pagedResult.TotalCount / (double)pageSize),
+                totalTeachers = pagedResult.TotalCount,
+                teachers = pagedResult.Items
+            };
+
+            return Ok(response);
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Teacher>> GetTeacher(int id)
+        // GET: api/teachers/{id}
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetTeacher(int id)
         {
-            var Teacher = await _context.Teachers.FindAsync(id);
-            if (Teacher == null) return NotFound();
-            return Teacher;
+            var teacher = await _teacherService.GetTeacherByIdAsync(id);
+            if (teacher == null)
+                return NotFound($"Teacher with ID {id} not found.");
+
+            return Ok(teacher);
         }
 
+        // POST: api/teachers
         [HttpPost]
-        public async Task<ActionResult<Teacher>> PostTeacher(Teacher teacher)
+        public async Task<IActionResult> CreateTeacher([FromBody] TeacherDTO teacherDto)
         {
-            _context.Teachers.Add(teacher);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetTeacher), new { id = teacher.TeacherID }, teacher);
+            if (teacherDto == null)
+                return BadRequest("Teacher data cannot be null.");
+
+            var createdTeacher = await _teacherService.AddTeacherAsync(teacherDto);
+
+            return CreatedAtAction(nameof(GetTeacher), new { id = createdTeacher.TeacherID }, createdTeacher);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTeacher(int id, Teacher teacher)
+        // PUT: api/teachers/{id}
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateTeacher(int id, [FromBody] TeacherDTO teacherDto)
         {
-            if (id != teacher.TeacherID) return BadRequest();
+            if (teacherDto == null)
+                return BadRequest("Invalid teacher data.");
 
-            _context.Entry(teacher).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var updatedTeacher = await _teacherService.UpdateTeacherAsync(id, teacherDto);
+            if (updatedTeacher == null)
+                return NotFound($"Teacher with ID {id} not found.");
+
+            return Ok(updatedTeacher);
         }
 
-        [HttpDelete("{id}")]
+        // DELETE: api/teachers/{id}
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteTeacher(int id)
         {
-            var teacher = await _context.Teachers.FindAsync(id);
-            if (teacher == null) return NotFound();
+            var isDeleted = await _teacherService.DeleteTeacherAsync(id);
+            if (!isDeleted)
+                return NotFound($"Teacher with ID {id} not found.");
 
-            _context.Teachers.Remove(teacher);
-            await _context.SaveChangesAsync();
             return NoContent();
         }
     }

@@ -22,6 +22,10 @@ builder.Services.AddAutoMapper(typeof(MapperProfile));
 
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+builder.Services.AddScoped<ITeacherService, TeacherService>();
 
 builder.Services.AddCors(options =>
 {

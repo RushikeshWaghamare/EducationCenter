@@ -21,17 +21,6 @@ namespace EducationCenter.Service.Services
             _studentRepository = studentRepository;
             _mapper = mapper;
         }
-        public async Task<StudentDTO> AddStudentAsync(StudentDTO studentDto)
-        {
-            var studentEntity = _mapper.Map<Student>(studentDto);
-            var addedStudent = await _studentRepository.AddStudentAsync(studentEntity);
-            return _mapper.Map<StudentDTO>(addedStudent);
-        }
-
-        public Task<bool> DeleteStudentAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
 
         public async Task<PagedResult<StudentDTO>> GetAllStudentsAsync(int pageNumber, int pageSize, string search)
         {
@@ -43,15 +32,26 @@ namespace EducationCenter.Service.Services
                 TotalCount = pagedResult.TotalCount
             };
         }
-
-        public Task<StudentDTO?> GetStudentByIdAsync(int id)
+        public async Task<StudentDTO?> GetStudentByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            var student = await _studentRepository.GetStudentByIdAsync(id);
+            return _mapper.Map<StudentDTO>(student);
         }
-
-        public Task<bool> UpdateStudentAsync(int id, StudentDTO student)
+        public async Task<StudentDTO> AddStudentAsync(StudentDTO studentDto)
         {
-            throw new NotImplementedException();
+            var studentEntity = _mapper.Map<Student>(studentDto);
+            var addedStudent = await _studentRepository.AddStudentAsync(studentEntity);
+            return _mapper.Map<StudentDTO>(addedStudent);
+        }
+        public async Task<StudentDTO> UpdateStudentAsync(int id, StudentDTO student)
+        {
+            var studentEntity = _mapper.Map<Student>(student);
+            var updatedStudent = await _studentRepository.UpdateStudentAsync(id, studentEntity);
+            return _mapper.Map<StudentDTO>(updatedStudent);
+        }
+        public async Task<bool> DeleteStudentAsync(int id)
+        {
+            return await _studentRepository.DeleteStudentAsync(id);
         }
     }
 }

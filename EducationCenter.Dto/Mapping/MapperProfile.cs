@@ -15,6 +15,12 @@ namespace EducationCenter.Dto.Mapping
         {
             CreateMap<Student, StudentDTO>()
                 .ReverseMap();
+
+            CreateMap<Department, DepartmentDTO>()
+                .ReverseMap();
+
+            CreateMap<Teacher, TeacherDTO>()
+                .ReverseMap();
         }
     }
 }

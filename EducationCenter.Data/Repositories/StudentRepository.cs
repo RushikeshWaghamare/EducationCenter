@@ -16,21 +16,7 @@ namespace EducationCenter.Data.Repositories
         public StudentRepository(EducationCenterContext context) 
         {
             _context = context;
-        }
-        public async Task<Student> AddStudentAsync(Student student)
-        {          
-            if (string.IsNullOrEmpty(student.Status))
-                student.Status = "Active";
-
-            _context.Students.Add(student);
-            await _context.SaveChangesAsync();
-            return student;
-        }
-
-        public Task<bool> DeleteStudentAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
+        }        
 
         public async Task<PagedResult<Student>> GetAllStudentsAsync(int pageNumber, int pageSize, string search)
         {
@@ -57,16 +43,48 @@ namespace EducationCenter.Data.Repositories
                 TotalCount = totalStudents
             };
         }
-
-
-        public Task<Student?> GetStudentByIdAsync(int id)
+        public async Task<Student?> GetStudentByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return await _context.Students.FindAsync(id);
         }
-
-        public Task<bool> UpdateStudentAsync(int id, Student student)
+        public async Task<Student> AddStudentAsync(Student student)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(student.Status))
+                student.Status = "Active";
+
+            _context.Students.Add(student);
+            await _context.SaveChangesAsync();
+            return student;
+        }
+        public async Task<Student> UpdateStudentAsync(int id, Student student)
+        {
+            if (student == null)
+                throw new ArgumentNullException(nameof(student), "Invalid student data.");
+
+            var existingStudent = await _context.Students.FindAsync(id);
+            if (existingStudent == null)
+                return null;
+
+            existingStudent.FirstName = student.FirstName;
+            existingStudent.LastName = student.LastName;
+            existingStudent.Email = student.Email;
+            existingStudent.Phone = student.Phone;
+            existingStudent.Address = student.Address;
+            existingStudent.DateOfBirth = student.DateOfBirth;
+            existingStudent.Gender = student.Gender;
+
+            await _context.SaveChangesAsync();
+            return existingStudent;
+        }
+        public async Task<bool> DeleteStudentAsync(int id)
+        {
+            var student = await _context.Students.FindAsync(id);
+            if (student == null)
+                return false;
+
+            _context.Students.Remove(student);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

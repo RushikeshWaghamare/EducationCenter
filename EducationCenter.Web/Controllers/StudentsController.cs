@@ -1,6 +1,7 @@
 ﻿using EducationCenter.Data.Models;
 using EducationCenter.Dto.DTOs;
 using EducationCenter.Service.Services.IService;
+using EducationCenter.Web.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EducationCenter.Web.Controllers
@@ -21,12 +22,12 @@ namespace EducationCenter.Web.Controllers
         public async Task<IActionResult> GetAllStudents([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 5, [FromQuery] string search = "")
         {
             if (pageNumber <= 0 || pageSize <= 0)
-                return BadRequest("Invalid pagination parameters.");
+                throw new BadRequestException("Invalid pagination parameters.");
 
             var pagedResult = await _studentService.GetAllStudentsAsync(pageNumber, pageSize, search);
 
             if (pagedResult == null || !pagedResult.Items.Any())
-                return NotFound("No students found.");
+                throw new NotFoundException("No students found.");
 
             var response = new
             {
